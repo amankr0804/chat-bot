@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Interface</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Welcome to Chat Interface</h1>
+  </header>
+  <div class="chat-container">
+    <div class="chat-header">
+      💬 Chat with Bot
+      <button id="clearHistory">🗑️</button>
+      <button id="themeToggle">🌙</button>
+    </div>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="typing" id="typingIndicator">Bot is typing...</div>
+
+    <div class="chat-input">
+      <input type="text" id="userInput" placeholder="Type your message..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+  <footer>
+    <p> &copy; 2025 All Rights Reserved. | Made with &hearts;</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
