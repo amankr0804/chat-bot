@@ -4,6 +4,34 @@ const sendBtn = document.getElementById("sendBtn");
 const typingIndicator = document.getElementById("typingIndicator");
 const themeToggle = document.getElementById("themeToggle");
 const clearHistory = document.getElementById("clearHistory");
+const logoutBtn = document.getElementById("logoutBtn");
+const userName = document.getElementById("userName");
+
+// Check if user is logged in
+function checkAuth() {
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  if (!currentUser) {
+    // Redirect to auth page if not logged in
+    window.location.href = "auth.html";
+  } else {
+    // Display user name
+    userName.textContent = currentUser.name || "User";
+  }
+}
+
+// Logout function
+function logout() {
+  if (confirm("Are you sure you want to logout?")) {
+    localStorage.removeItem("currentUser");
+    window.location.href = "auth.html";
+  }
+}
+
+// Call auth check on page load
+checkAuth();
+
+// Logout button event listener
+logoutBtn.addEventListener("click", logout);
 
 // Avatar images
 // Avatar images as animated SVG data-URIs (not GIFs). These are lightweight, scalable,

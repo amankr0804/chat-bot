@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat - Login & Signup</title>
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+  <div class="auth-container">
+    <!-- Login Form -->
+    <div class="auth-form login-form active">
+      <h1>Login</h1>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required />
+          <span class="error-message" id="loginEmailError"></span>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required />
+          <span class="error-message" id="loginPasswordError"></span>
+        </div>
+        <button type="submit" class="auth-btn">Login</button>
+        <span class="error-message" id="loginError"></span>
+      </form>
+      <p class="toggle-text">
+        Don't have an account? <a href="#" class="toggle-link" data-form="signup">Sign up here</a>
+      </p>
+    </div>
+
+    <!-- Signup Form -->
+    <div class="auth-form signup-form">
+      <h1>Sign Up</h1>
+      <form id="signupForm">
+        <div class="form-group">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" name="name" placeholder="Enter your full name" required />
+          <span class="error-message" id="signupNameError"></span>
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" name="email" placeholder="Enter your email" required />
+          <span class="error-message" id="signupEmailError"></span>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" name="password" placeholder="Enter your password" required />
+          <span class="error-message" id="signupPasswordError"></span>
+        </div>
+        <div class="form-group">
+          <label for="signupConfirmPassword">Confirm Password</label>
+          <input type="password" id="signupConfirmPassword" name="confirmPassword" placeholder="Confirm your password" required />
+          <span class="error-message" id="signupConfirmPasswordError"></span>
+        </div>
+        <button type="submit" class="auth-btn">Sign Up</button>
+        <span class="error-message" id="signupError"></span>
+      </form>
+      <p class="toggle-text">
+        Already have an account? <a href="#" class="toggle-link" data-form="login">Login here</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+</body>
+</html>
