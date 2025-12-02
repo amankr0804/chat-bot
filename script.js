@@ -7,46 +7,17 @@ const clearHistory = document.getElementById("clearHistory");
 const logoutBtn = document.getElementById("logoutBtn");
 const userName = document.getElementById("userName");
 
-// Firebase references
-let db;
 let currentUserId;
-
-// Wait for Firebase to initialize
-setTimeout(() => {
-  db = window.firebaseDB;
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  if (currentUser) {
-    currentUserId = currentUser.id;
-    loadChatHistoryFromCloud();
-  }
-}, 1000);
 
 // Check if user is logged in
 function checkAuth() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
   if (!currentUser) {
-    // Redirect to auth page if not logged in
     window.location.href = "auth.html";
   } else {
-    // Display user name
+    currentUserId = currentUser.id;
     userName.textContent = currentUser.name || "User";
   }
-}
-
-// Load chat history from Firebase Cloud
-function loadChatHistoryFromCloud() {
-  if (!db || !currentUserId) return;
-  
-  db.ref(`chatHistory/${currentUserId}`).on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      chatBox.innerHTML = "";
-      Object.values(data).forEach(msg => {
-        displayMessage(msg.text, msg.sender, false);
-      });
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-  });
 }
 
 // Logout function
@@ -57,16 +28,7 @@ function logout() {
   }
 }
 
-// Call auth check on page load
-checkAuth();
-
-// Logout button event listener
-logoutBtn.addEventListener("click", logout);
-
-// Avatar images
-// Avatar images as animated SVG data-URIs (not GIFs). These are lightweight, scalable,
-// and animate natively in the image. Replace the SVG strings below if you want
-// different artwork.
+// Avatar images - animated SVG data-URIs
 const userAvatar = (function(){
   const svg = `
   <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='80' height='80'>
@@ -97,44 +59,41 @@ const botAvatar = (function(){
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 })();
 
-// Load theme
-if (localStorage.getItem("theme") === "dark") {
-  document.body.classList.add("dark");
-  themeToggle.textContent = "☀️";
-}
+// Load theme and chat history after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
+  logoutBtn.addEventListener("click", logout);
 
-// Load chat history
-window.onload = () => {
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+    themeToggle.textContent = "☀️";
+  }
+
   const savedChat = JSON.parse(localStorage.getItem("chatHistory")) || [];
   savedChat.forEach(msg => displayMessage(msg.text, msg.sender, false));
-  chatBox.scrollTop = chatBox.scrollHeight;
-};
-
-sendBtn.addEventListener("click", sendMessage);
-userInput.addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
-});
-
-themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  const darkMode = document.body.classList.contains("dark");
-  themeToggle.textContent = darkMode ? "☀️" : "🌙";
-  localStorage.setItem("theme", darkMode ? "dark" : "light");
-});
-
-clearHistory.addEventListener("click", () => {
-  if (confirm("Are you sure you want to clear the chat history?")) {
-    // Clear the chat display
-    chatBox.innerHTML = "";
-    // Clear the localStorage
-    localStorage.removeItem("chatHistory");
-    // Clear from Firebase
-    if (db && currentUserId) {
-      db.ref(`chatHistory/${currentUserId}`).remove();
-    }
-    // Add a system message
-    displayMessage("Chat history has been cleared.", "bot", true);
+  if (chatBox.children.length > 0) {
+    chatBox.scrollTop = chatBox.scrollHeight;
   }
+
+  sendBtn.addEventListener("click", sendMessage);
+  userInput.addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  themeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    const darkMode = document.body.classList.contains("dark");
+    themeToggle.textContent = darkMode ? "☀️" : "🌙";
+    localStorage.setItem("theme", darkMode ? "dark" : "light");
+  });
+
+  clearHistory.addEventListener("click", () => {
+    if (confirm("Are you sure you want to clear the chat history?")) {
+      chatBox.innerHTML = "";
+      localStorage.removeItem("chatHistory");
+      displayMessage("Chat history has been cleared.", "bot", true);
+    }
+  });
 });
 
 function sendMessage() {
@@ -283,18 +242,8 @@ function botReply(userMessage) {
 }
 
 function saveMessage(text, sender) {
-  // Save to localStorage for offline support
+  // Save to localStorage
   const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
   chatHistory.push({ text, sender });
   localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
-
-  // Save to Firebase Cloud
-  if (db && currentUserId) {
-    const messageId = Date.now();
-    db.ref(`chatHistory/${currentUserId}/${messageId}`).set({
-      text: text,
-      sender: sender,
-      timestamp: new Date().toISOString()
-    });
-  }
 }

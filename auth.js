@@ -7,10 +7,21 @@ const signupFormDiv = document.querySelector(".signup-form");
 
 // Wait for Firebase to be ready
 let db, auth;
-setTimeout(() => {
-  db = window.firebaseDB;
-  auth = window.firebaseAuth;
-}, 1000);
+
+// Check Firebase availability multiple times
+function initFirebase() {
+  if (window.firebase && window.firebase.auth) {
+    auth = firebase.auth();
+    db = firebase.database();
+    console.log("Firebase initialized successfully");
+  } else {
+    console.log("Waiting for Firebase...");
+    setTimeout(initFirebase, 500);
+  }
+}
+
+// Initialize Firebase on page load
+window.addEventListener('load', initFirebase);
 
 // Toggle between login and signup forms
 toggleLinks.forEach(link => {
@@ -80,11 +91,15 @@ loginForm.addEventListener("submit", (e) => {
   // Use Firebase Authentication
   if (!auth) {
     showError("loginError", "Firebase not initialized. Check your config.");
+    console.error("Auth not initialized:", auth);
     return;
   }
 
+  console.log("Attempting login with:", email);
+
   auth.signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
+      console.log("Login successful:", userCredential.user.uid);
       // Store user session locally
       localStorage.setItem("currentUser", JSON.stringify({
         id: userCredential.user.uid,
@@ -95,6 +110,7 @@ loginForm.addEventListener("submit", (e) => {
       window.location.href = "index.html";
     })
     .catch((error) => {
+      console.error("Login error:", error.code, error.message);
       if (error.code === "auth/user-not-found") {
         showError("loginError", "No account found with this email");
       } else if (error.code === "auth/wrong-password") {
@@ -155,11 +171,15 @@ signupForm.addEventListener("submit", (e) => {
   // Use Firebase Authentication
   if (!auth) {
     showError("signupError", "Firebase not initialized. Check your config.");
+    console.error("Auth not initialized:", auth);
     return;
   }
 
+  console.log("Attempting signup with:", email);
+
   auth.createUserWithEmailAndPassword(email, password)
     .then((userCredential) => {
+      console.log("Signup successful:", userCredential.user.uid);
       // Update user profile with name
       return userCredential.user.updateProfile({
         displayName: name
@@ -185,6 +205,7 @@ signupForm.addEventListener("submit", (e) => {
       });
     })
     .catch((error) => {
+      console.error("Signup error:", error.code, error.message);
       if (error.code === "auth/email-already-in-use") {
         showError("signupError", "Email already registered");
       } else if (error.code === "auth/weak-password") {

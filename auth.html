@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chat - Login & Signup</title>
   <link rel="stylesheet" href="auth.css" />
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
 </head>
 <body>
   <div class="auth-container">
@@ -17,20 +13,20 @@
       <h1>Login</h1>
       <form id="loginForm">
         <div class="form-group">
-          <label for="loginEmail">Email</label>
-          <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required />
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="Enter your email" required />
           <span class="error-message" id="loginEmailError"></span>
         </div>
         <div class="form-group">
-          <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required />
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password" required />
           <span class="error-message" id="loginPasswordError"></span>
         </div>
         <button type="submit" class="auth-btn">Login</button>
         <span class="error-message" id="loginError"></span>
       </form>
       <p class="toggle-text">
-        Don't have an account? <a href="#" class="toggle-link" data-form="signup">Sign up here</a>
+        Don't have an account? <a href="#" class="toggle-link" data-form="signup">Sign up</a>
       </p>
     </div>
 
@@ -39,35 +35,151 @@
       <h1>Sign Up</h1>
       <form id="signupForm">
         <div class="form-group">
-          <label for="signupName">Full Name</label>
-          <input type="text" id="signupName" name="name" placeholder="Enter your full name" required />
+          <label>Full Name</label>
+          <input type="text" id="signupName" placeholder="Enter your name" required />
           <span class="error-message" id="signupNameError"></span>
         </div>
         <div class="form-group">
-          <label for="signupEmail">Email</label>
-          <input type="email" id="signupEmail" name="email" placeholder="Enter your email" required />
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="Enter your email" required />
           <span class="error-message" id="signupEmailError"></span>
         </div>
         <div class="form-group">
-          <label for="signupPassword">Password</label>
-          <input type="password" id="signupPassword" name="password" placeholder="Enter your password" required />
+          <label>Password</label>
+          <input type="password" id="signupPassword" placeholder="Min 6 chars" required />
           <span class="error-message" id="signupPasswordError"></span>
         </div>
         <div class="form-group">
-          <label for="signupConfirmPassword">Confirm Password</label>
-          <input type="password" id="signupConfirmPassword" name="confirmPassword" placeholder="Confirm your password" required />
+          <label>Confirm Password</label>
+          <input type="password" id="signupConfirmPassword" placeholder="Confirm" required />
           <span class="error-message" id="signupConfirmPasswordError"></span>
         </div>
         <button type="submit" class="auth-btn">Sign Up</button>
         <span class="error-message" id="signupError"></span>
       </form>
       <p class="toggle-text">
-        Already have an account? <a href="#" class="toggle-link" data-form="login">Login here</a>
+        Already have account? <a href="#" class="toggle-link" data-form="login">Login</a>
       </p>
     </div>
   </div>
 
-  <script src="firebase-config.js"></script>
-  <script src="auth.js"></script>
+  <script>
+    // Get elements
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+    const toggleLinks = document.querySelectorAll(".toggle-link");
+    const loginDiv = document.querySelector(".login-form");
+    const signupDiv = document.querySelector(".signup-form");
+
+    // Toggle forms
+    toggleLinks.forEach(link => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (link.dataset.form === "signup") {
+          loginDiv.classList.remove("active");
+          signupDiv.classList.add("active");
+        } else {
+          signupDiv.classList.remove("active");
+          loginDiv.classList.add("active");
+        }
+        clearErr();
+      });
+    });
+
+    function clearErr() {
+      document.querySelectorAll(".error-message").forEach(el => {
+        el.textContent = "";
+      });
+    }
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = msg;
+    }
+
+    // Login handler
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      clearErr();
+      
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      if (!email) {
+        showErr("loginEmailError", "Email required");
+        return;
+      }
+      if (!password) {
+        showErr("loginPasswordError", "Password required");
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+      const user = users.find(u => u.email === email && u.password === password);
+
+      if (user) {
+        localStorage.setItem("currentUser", JSON.stringify({
+          id: user.id,
+          email: user.email,
+          name: user.name
+        }));
+        window.location.href = "index.html";
+      } else {
+        showErr("loginError", "Invalid email or password");
+      }
+    });
+
+    // Signup handler
+    signupForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      clearErr();
+
+      const name = document.getElementById("signupName").value.trim();
+      const email = document.getElementById("signupEmail").value.trim();
+      const password = document.getElementById("signupPassword").value;
+      const confirmPassword = document.getElementById("signupConfirmPassword").value;
+
+      if (!name || name.length < 3) {
+        showErr("signupNameError", "Name min 3 chars");
+        return;
+      }
+      if (!email) {
+        showErr("signupEmailError", "Email required");
+        return;
+      }
+      if (!password || password.length < 6) {
+        showErr("signupPasswordError", "Password min 6 chars");
+        return;
+      }
+      if (password !== confirmPassword) {
+        showErr("signupConfirmPasswordError", "Passwords don't match");
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+      if (users.find(u => u.email === email)) {
+        showErr("signupError", "Email already registered");
+        return;
+      }
+
+      const newUser = {
+        id: Date.now().toString(),
+        name: name,
+        email: email,
+        password: password
+      };
+
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
+
+      localStorage.setItem("currentUser", JSON.stringify({
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name
+      }));
+
+      window.location.href = "index.html";
+    });
+  </script>
 </body>
 </html>
