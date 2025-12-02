@@ -5,6 +5,13 @@ const toggleLinks = document.querySelectorAll(".toggle-link");
 const loginFormDiv = document.querySelector(".login-form");
 const signupFormDiv = document.querySelector(".signup-form");
 
+// Wait for Firebase to be ready
+let db, auth;
+setTimeout(() => {
+  db = window.firebaseDB;
+  auth = window.firebaseAuth;
+}, 1000);
+
 // Toggle between login and signup forms
 toggleLinks.forEach(link => {
   link.addEventListener("click", (e) => {
@@ -44,16 +51,6 @@ function showError(fieldId, message) {
   }
 }
 
-// Get all users from localStorage
-function getAllUsers() {
-  return JSON.parse(localStorage.getItem("users")) || [];
-}
-
-// Save users to localStorage
-function saveUsers(users) {
-  localStorage.setItem("users", JSON.stringify(users));
-}
-
 // Login form submission
 loginForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -80,22 +77,32 @@ loginForm.addEventListener("submit", (e) => {
 
   if (hasError) return;
 
-  // Check credentials
-  const users = getAllUsers();
-  const user = users.find(u => u.email === email && u.password === password);
-
-  if (user) {
-    // Store current user session
-    localStorage.setItem("currentUser", JSON.stringify({
-      id: user.id,
-      name: user.name,
-      email: user.email
-    }));
-    // Redirect to chat
-    window.location.href = "index.html";
-  } else {
-    showError("loginError", "Invalid email or password");
+  // Use Firebase Authentication
+  if (!auth) {
+    showError("loginError", "Firebase not initialized. Check your config.");
+    return;
   }
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      // Store user session locally
+      localStorage.setItem("currentUser", JSON.stringify({
+        id: userCredential.user.uid,
+        email: userCredential.user.email,
+        name: userCredential.user.displayName || "User"
+      }));
+      // Redirect to chat
+      window.location.href = "index.html";
+    })
+    .catch((error) => {
+      if (error.code === "auth/user-not-found") {
+        showError("loginError", "No account found with this email");
+      } else if (error.code === "auth/wrong-password") {
+        showError("loginError", "Incorrect password");
+      } else {
+        showError("loginError", error.message);
+      }
+    });
 });
 
 // Signup form submission
@@ -145,34 +152,46 @@ signupForm.addEventListener("submit", (e) => {
 
   if (hasError) return;
 
-  // Check if email already exists
-  const users = getAllUsers();
-  const existingUser = users.find(u => u.email === email);
-
-  if (existingUser) {
-    showError("signupError", "Email already registered");
+  // Use Firebase Authentication
+  if (!auth) {
+    showError("signupError", "Firebase not initialized. Check your config.");
     return;
   }
 
-  // Create new user
-  const newUser = {
-    id: Date.now(),
-    name: name,
-    email: email,
-    password: password,
-    createdAt: new Date().toISOString()
-  };
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      // Update user profile with name
+      return userCredential.user.updateProfile({
+        displayName: name
+      }).then(() => {
+        // Save user data to Realtime Database
+        if (db) {
+          db.ref(`users/${userCredential.user.uid}`).set({
+            name: name,
+            email: email,
+            createdAt: new Date().toISOString()
+          });
+        }
 
-  users.push(newUser);
-  saveUsers(users);
+        // Store user session locally
+        localStorage.setItem("currentUser", JSON.stringify({
+          id: userCredential.user.uid,
+          email: email,
+          name: name
+        }));
 
-  // Store current user session
-  localStorage.setItem("currentUser", JSON.stringify({
-    id: newUser.id,
-    name: newUser.name,
-    email: newUser.email
-  }));
-
-  // Redirect to chat
-  window.location.href = "index.html";
+        // Redirect to chat
+        window.location.href = "index.html";
+      });
+    })
+    .catch((error) => {
+      if (error.code === "auth/email-already-in-use") {
+        showError("signupError", "Email already registered");
+      } else if (error.code === "auth/weak-password") {
+        showError("signupPasswordError", "Password is too weak");
+      } else {
+        showError("signupError", error.message);
+      }
+    });
+});
 });

@@ -7,6 +7,20 @@ const clearHistory = document.getElementById("clearHistory");
 const logoutBtn = document.getElementById("logoutBtn");
 const userName = document.getElementById("userName");
 
+// Firebase references
+let db;
+let currentUserId;
+
+// Wait for Firebase to initialize
+setTimeout(() => {
+  db = window.firebaseDB;
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  if (currentUser) {
+    currentUserId = currentUser.id;
+    loadChatHistoryFromCloud();
+  }
+}, 1000);
+
 // Check if user is logged in
 function checkAuth() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -17,6 +31,22 @@ function checkAuth() {
     // Display user name
     userName.textContent = currentUser.name || "User";
   }
+}
+
+// Load chat history from Firebase Cloud
+function loadChatHistoryFromCloud() {
+  if (!db || !currentUserId) return;
+  
+  db.ref(`chatHistory/${currentUserId}`).on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      chatBox.innerHTML = "";
+      Object.values(data).forEach(msg => {
+        displayMessage(msg.text, msg.sender, false);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  });
 }
 
 // Logout function
@@ -98,6 +128,10 @@ clearHistory.addEventListener("click", () => {
     chatBox.innerHTML = "";
     // Clear the localStorage
     localStorage.removeItem("chatHistory");
+    // Clear from Firebase
+    if (db && currentUserId) {
+      db.ref(`chatHistory/${currentUserId}`).remove();
+    }
     // Add a system message
     displayMessage("Chat history has been cleared.", "bot", true);
   }
@@ -249,7 +283,18 @@ function botReply(userMessage) {
 }
 
 function saveMessage(text, sender) {
+  // Save to localStorage for offline support
   const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
   chatHistory.push({ text, sender });
   localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+
+  // Save to Firebase Cloud
+  if (db && currentUserId) {
+    const messageId = Date.now();
+    db.ref(`chatHistory/${currentUserId}/${messageId}`).set({
+      text: text,
+      sender: sender,
+      timestamp: new Date().toISOString()
+    });
+  }
 }
